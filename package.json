@@ -1,0 +1,14 @@
+{
+    "name": "Siwec",
+    "version": "0.0.1",
+    "description": "Simple TOR darkweb crawler to make Gephi graphs",
+    "main": "crawl.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "node crawl.js"
+    },
+    "dependencies": {
+        "tor-control": "^0.0.1",
+        "request": "^2.76.0"
+    }
+}
