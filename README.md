@@ -89,5 +89,5 @@ Then change the parameters in the top of the crawl.js file to have the right tor
 
 ```bash
 # Launch the crawler
-node start.js
+node crawl.js
 ```
