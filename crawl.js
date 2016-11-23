@@ -6,10 +6,8 @@ const fs = require('fs');
 const readline = require('readline');
 const spawn = require('child_process').spawn;
 const TorControl = require('tor-control');
-const request = require('request');
 
 const TORPROXY = '127.0.0.1:9050';
-const GEPHISRV = 'http://127.0.0.1:8080/workspace1';
 
 var torControl = new TorControl({
     password: 'torpassword',
@@ -20,78 +18,6 @@ var urlsToVisit = [];
 var urlsVisited = [];
 var urlsTimedOut = [];
 var onionScanner;
-
-
-/**********************************
- ******** GRAPHER FUNCTIONS *******
- **********************************/
-
-// Helper to send node info to Gephi
-function AddGephiNode(node, type, callback) {
-    var jsonToSend = '{"an":{"' + node + '":{"service_type": "' + type + '","size":10,"Label":"' + node + '"}}}';
-    var options = {
-        uri: GEPHISRV + '?operation=updateGraph',
-        method: 'POST',
-        json: JSON.parse(jsonToSend)
-    };
-    request(options, function(error, response, body) {
-        if (!error) {
-            return callback(node);
-        } else {
-            console.log('[!!!] Gephi link broken...');
-            return;
-        }
-    });
-}
-
-// Helper to send edge info to Gephi
-function AddGephiEdge(node1, node2, callback) {
-    var jsonToSend = '{"ae":{"' + node1 + '_' + node2 + '":{"source":"' + node1 + '","target":"' + node2 + '","directed":false}}}';
-    var options = {
-        uri: GEPHISRV + '?operation=updateGraph',
-        method: 'POST',
-        json: JSON.parse(jsonToSend)
-    };
-    request(options, function(error, response, body) {
-        if (!error) {
-            return callback();
-        } else {
-            console.log('[!!!] Gephi link broken...');
-            return;
-        }
-    });
-}
-
-// Process scan data with logic to put nodes and edges on a Gephi graph
-function MkGephiGraph(scandata) {
-    var sitesArray = [
-            scandata.linkedSites,
-            scandata.relatedOnionDomains,
-            scandata.relatedOnionServices
-        ],
-        onion = scandata.hiddenService;
-    AddGephiNode(onion, 'hiddenService', function() {
-        for (var i = 0; i < 3; i++) {
-            if (sitesArray[i] != null) {
-                for (var j = 0; j < sitesArray[i].length; j++) {
-                    if (sitesArray[i][j].endsWith('.onion')) {
-                        AddGephiNode(sitesArray[i][j], 'hiddenService', function(addedNode) {
-                            AddGephiEdge(onion, addedNode, function() {
-                                //console.log('edge added ' + addedNode);
-                            });
-                        });
-                    } else {
-                        AddGephiNode(sitesArray[i][j], 'clearNet', function(addedNode) {
-                            AddGephiEdge(onion, addedNode, function() {
-                                //console.log('edge added ' + addedNode);
-                            });
-                        });
-                    }
-                }
-            }
-        }
-    });
-}
 
 
 /**********************************
@@ -189,28 +115,6 @@ function GetNewTorIdentity(callback) {
     });
 };
 
-// First stage of processing scans data
-function ProcessResults(onion, onionScan, casperScan, callback) {
-    fs.writeFile('./ScanResults/' + onion + '.json', onionScan, function(err) {
-        if (err) {
-            return console.log(err);
-        }
-        console.log('[**] Scanfile saved for ' + onion);
-        var onionScanJson = JSON.parse(onionScan);
-        AddOnion('urls.txt', onionScanJson.linkedSites, function(nb) {
-            if (nb != 0) console.log('[*] Added ' + nb + ' .onion linked site(s) to master file');
-        });
-        AddOnion('urls.txt', onionScanJson.relatedOnionDomains, function(nb) {
-            if (nb != 0) console.log('[*] Added ' + nb + ' related .onion domain(s) to master file');
-        });
-        AddOnion('urls.txt', onionScanJson.relatedOnionServices, function(nb) {
-            if (nb != 0) console.log('[*] Added ' + nb + ' related .onion service(s) to master file');
-        });
-        MkGephiGraph(onionScanJson);
-        return callback();
-    });
-};
-
 // Recursive function to crawl all the onions in urlsToVisit array
 function Crawl() {
     if (urlsToVisit.length > 0) {
@@ -231,7 +135,21 @@ function Crawl() {
                     Crawl();
                 });
             } else {
-                ProcessResults(urlsToVisit[0], data, null, function() {
+                fs.writeFile('./ScanResults/' + urlsToVisit[0] + '.json', data, function(err) {
+                    if (err) {
+                        return console.log(err);
+                    }
+                    console.log('[**] Scanfile saved for ' + urlsToVisit[0]);
+                    var onionScanJson = JSON.parse(data);
+                    AddOnion('urls.txt', onionScanJson.linkedSites, function(nb) {
+                        if (nb != 0) console.log('[*] Added ' + nb + ' .onion linked site(s) to master file');
+                    });
+                    AddOnion('urls.txt', onionScanJson.relatedOnionDomains, function(nb) {
+                        if (nb != 0) console.log('[*] Added ' + nb + ' related .onion domain(s) to master file');
+                    });
+                    AddOnion('urls.txt', onionScanJson.relatedOnionServices, function(nb) {
+                        if (nb != 0) console.log('[*] Added ' + nb + ' related .onion service(s) to master file');
+                    });
                     urlsVisited.push(urlsToVisit[0]);
                     urlsToVisit.shift();
                     GetNewTorIdentity(function() {

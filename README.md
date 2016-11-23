@@ -90,4 +90,10 @@ Then change the parameters in the top of the crawl.js file to have the right tor
 ```bash
 # Launch the crawler
 node crawl.js
+
+# Launch the hyperlink grapher (can be done in parrallel with crawl.js)
+node hyperlink.js
+
+# Launch the semantic grapher (can be done in parrallel with crawl.js)
+node semantic.js
 ```
