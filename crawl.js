@@ -82,7 +82,7 @@ function ScanDomain(url, callback) {
     console.log('\n[->] Scanning ' + url + '\n[*] ' + (urlsToVisit.length - 1) + ' onion(s) restant');
     onionScanner = spawn('onionscan', ['--torProxyAddress', TORPROXY, '--jsonReport', url]);
     onionScanner.stdout.setEncoding('utf8');
-    onionScanner.stdout.on('data', function(data) {
+    onionScanner.on('exit', function(data) {
         scan += data.toString();
     });
     onionScanner.stdout.on('end', function() {
