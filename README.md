@@ -73,7 +73,7 @@ Installation of Gephi is optional but if you want the network, you'll have to in
 
 ```bash
 # Clone the app
-git clone git@github.com:Frix-x/DarkCrawler.git
+git clone https://github.com/Frix-x/DarkCrawler.git
 
 # Install its dependencies
 npm install
