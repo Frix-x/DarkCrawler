@@ -4,7 +4,7 @@
 
 const fs = require('fs');
 const readline = require('readline');
-const exec = require('child_process').exec;
+const spawn = require('child_process').spawn;
 const TorControl = require('tor-control');
 
 const TORPROXY = '127.0.0.1:9050';
@@ -80,13 +80,12 @@ function AddOnion(file, onionArray, callback) {
 function ScanDomain(url, callback) {
     var scan = '';
     console.log('\n[->] Scanning ' + url + '\n[*] ' + (urlsToVisit.length - 1) + ' onion(s) restant');
-    onionScanner = exec('onionscan --torProxyAddress ' + TORPROXY + ' --jsonReport ' + url, {
-        maxBuffer: 1000 * 1024
-    }, function(err, stdout, stderr) {
-        if (err) {
-            return console.error(err);
-        }
-        return callback(stdout);
+    onionScanner = spawn('onionscan', ['--torProxyAddress', TORPROXY, '--jsonReport', '--webport', '0', url]);
+    onionScanner.stdout.on('data', function(data) {
+        scan += data.toString();
+    });
+    onionScanner.on('close', function() {
+        return callback(scan);
     });
 };
 
@@ -141,13 +140,13 @@ function Crawl() {
                     }
                     console.log('[**] Scanfile saved for ' + urlsToVisit[0]);
                     var onionScanJson = JSON.parse(data);
-                    AddOnion('urls.txt', onionScanJson.linkedSites, function(nb) {
+                    AddOnion('urls.txt', onionScanJson.identifierReport.linkedOnions, function(nb) {
                         if (nb != 0) console.log('[*] Added ' + nb + ' .onion linked site(s) to master file');
                     });
-                    AddOnion('urls.txt', onionScanJson.relatedOnionDomains, function(nb) {
+                    AddOnion('urls.txt', onionScanJson.identifierReport.relatedOnionDomains, function(nb) {
                         if (nb != 0) console.log('[*] Added ' + nb + ' related .onion domain(s) to master file');
                     });
-                    AddOnion('urls.txt', onionScanJson.relatedOnionServices, function(nb) {
+                    AddOnion('urls.txt', onionScanJson.identifierReport.relatedOnionServices, function(nb) {
                         if (nb != 0) console.log('[*] Added ' + nb + ' related .onion service(s) to master file');
                     });
                     urlsVisited.push(urlsToVisit[0]);

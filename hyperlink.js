@@ -52,9 +52,9 @@ function AddGephiEdge(node1, node2, callback) {
 // Process scan data with logic to make a graph for hypertext links
 function MkHtmlGraph(scandata) {
     var sitesArray = [
-            scandata.linkedSites,
-            scandata.relatedOnionDomains,
-            scandata.relatedOnionServices
+            scandata.identifierReport.linkedOnions,
+            scandata.identifierReport.relatedOnionDomains,
+            scandata.identifierReport.relatedOnionServices
         ],
         onion = scandata.hiddenService;
     AddGephiNode(onion, 'hiddenService', function() {
@@ -70,6 +70,7 @@ function MkHtmlGraph(scandata) {
                     } else {
                         AddGephiNode(sitesArray[i][j], 'clearNet', function(addedNode) {
                             AddGephiEdge(onion, addedNode, function() {
+                                // This part is currently broken since the new version of onionscan which is not reporting clearNet websites.
                                 //console.log('edge added ' + addedNode);
                             });
                         });

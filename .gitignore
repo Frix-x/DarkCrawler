@@ -39,4 +39,5 @@ jspm_packages
 # App directories and files
 Gephi
 ScanResults/*.json
+onionscandb
 urls.txt
