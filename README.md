@@ -10,20 +10,7 @@ DarkCrawler runs on Node.js. If you do not have it installed yet, refer to its [
 
 ### 2) OnionScan
 
-OnionScan is a free and open source tool written in Go for investigating vulnerabilities on the Dark Web. If not yet installed, you'll have to install the Go requirements. The following instructions are from Ryan Frankel’s [post](http://www.hostingadvice.com/how-to/install-golang-on-ubuntu/).
-
-```bash
-# Download Go Version Manager
-bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
-[[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"
-source /root/.gvm/scripts/gvm
-
-# Install Go 1.4
-gvm install go1.4 --binary
-gvm use go1.4
-```
-
-For other distributions, please refer to the [GVM repository](https://github.com/moovweb/gvm).
+[OnionScan](https://github.com/s-rah/onionscan) is a free and open source tool written in Go for investigating vulnerabilities on the Dark Web. If not yet installed, you'll have to install the [Go programming language](https://golang.org/doc/install).
 
 Now it's time to install OnionScan by entering the following :
 
@@ -76,6 +63,7 @@ Installation of Gephi is optional but if you want the network, you'll have to in
 git clone https://github.com/Frix-x/DarkCrawler.git
 
 # Install its dependencies
+cd DarkCrawler
 npm install
 ```
 
@@ -83,9 +71,9 @@ Don't forget to put a file called urls.txt in the same folder containing the set
 
 ## Usage
 
-First of all, put Gephi in English to allow the streaming API to work. Then start the streaming server.
+First of all, put Gephi in English to allow the streaming API to work (while using hyperlink.js or semantic.js) and then start the streaming server.
 
-Then change the parameters in the top of the crawl.js file to have the right torpassword and and the right TOR and Gephi servers IPs
+Then change the parameters in the top of those js files to put the right parameters (torpassword, TOR and Gephi servers IPs)
 
 ```bash
 # Launch the crawler

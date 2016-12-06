@@ -4,7 +4,7 @@
 
 const fs = require('fs');
 const readline = require('readline');
-const spawn = require('child_process').spawn;
+const exec = require('child_process').exec;
 const TorControl = require('tor-control');
 
 const TORPROXY = '127.0.0.1:9050';
@@ -80,13 +80,13 @@ function AddOnion(file, onionArray, callback) {
 function ScanDomain(url, callback) {
     var scan = '';
     console.log('\n[->] Scanning ' + url + '\n[*] ' + (urlsToVisit.length - 1) + ' onion(s) restant');
-    onionScanner = spawn('onionscan', ['--torProxyAddress', TORPROXY, '--jsonReport', url]);
-    onionScanner.stdout.setEncoding('utf8');
-    onionScanner.on('exit', function(data) {
-        scan += data.toString();
-    });
-    onionScanner.stdout.on('end', function() {
-        return callback(scan);
+    onionScanner = exec('onionscan --torProxyAddress ' + TORPROXY + ' --jsonReport ' + url, {
+        maxBuffer: 1000 * 1024
+    }, function(err, stdout, stderr) {
+        if (err) {
+            return console.error(err);
+        }
+        return callback(stdout);
     });
 };
 
