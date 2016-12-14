@@ -16,6 +16,11 @@ Now it's time to install OnionScan by entering the following :
 
 ```bash
 go get github.com/s-rah/onionscan
+```
+
+Make change to the file in $GOPATH/src/github.com/s-rah/onionscan/deanonymization/get_onion_links.go to add clearNet site to the linkedOnions part of the jsonReport. Then :
+
+```bash
 go install github.com/s-rah/onionscan
 
 # OnionScan should be working now with
