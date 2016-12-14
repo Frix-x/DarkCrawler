@@ -49,6 +49,22 @@ function AddGephiEdge(node1, node2, callback) {
     });
 }
 
+// Extract domain from an URI
+function ExtractDomain(url) {
+    var domain;
+    //find & remove protocol (http, ftp, etc.) and get domain
+    if (url.indexOf("://") > -1) {
+        domain = url.split('/')[2];
+    } else {
+        domain = url.split('/')[0];
+    }
+    //find & remove port number
+    domain = domain.split(':')[0];
+    if (/^((?!-))(xn--)?[a-z0-9][a-z0-9-_]{0,61}[a-z0-9]{0,1}\.(xn--)?([a-z0-9\-]{1,61}|[a-z0-9-]{1,30}\.[a-z]{2,})$/.test(domain)) {
+        return domain;
+    } else return null;
+}
+
 // Process scan data with logic to make a graph for hypertext links
 function MkHtmlGraph(scandata) {
     var sitesArray = [
@@ -68,12 +84,14 @@ function MkHtmlGraph(scandata) {
                             });
                         });
                     } else {
-                        AddGephiNode(sitesArray[i][j], 'clearNet', function(addedNode) {
-                            AddGephiEdge(onion, addedNode, function() {
-                                // This part is currently broken since the new version of onionscan which is not reporting clearNet websites.
-                                //console.log('edge added ' + addedNode);
+                        var clearnetLink = ExtractDomain(sitesArray[i][j]);
+                        if (clearnetLink != null) {
+                            AddGephiNode(clearnetLink, 'clearNet', function(addedNode) {
+                                AddGephiEdge(onion, addedNode, function() {
+                                    //console.log('edge added ' + addedNode);
+                                });
                             });
-                        });
+                        }
                     }
                 }
             }
