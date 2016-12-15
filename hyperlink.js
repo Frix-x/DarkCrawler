@@ -77,7 +77,7 @@ function MkHtmlGraph(scandata) {
         for (var i = 0; i < 3; i++) {
             if (sitesArray[i] != null) {
                 for (var j = 0; j < sitesArray[i].length; j++) {
-                    if (sitesArray[i][j].endsWith('.onion')) {
+                    if (sitesArray[i][j].endsWith('.onion') && !sitesArray[i][j].startsWith('mailto:')) {
                         AddGephiNode(sitesArray[i][j], 'hiddenService', function(addedNode) {
                             AddGephiEdge(onion, addedNode, function() {
                                 //console.log('edge added ' + addedNode);
@@ -86,11 +86,13 @@ function MkHtmlGraph(scandata) {
                     } else {
                         var clearnetLink = ExtractDomain(sitesArray[i][j]);
                         if (clearnetLink != null) {
-                            AddGephiNode(clearnetLink, 'clearNet', function(addedNode) {
-                                AddGephiEdge(onion, addedNode, function() {
-                                    //console.log('edge added ' + addedNode);
+                            if (!clearnetLink.startsWith('mailto:')) {
+                                AddGephiNode(clearnetLink, 'clearNet', function(addedNode) {
+                                    AddGephiEdge(onion, addedNode, function() {
+                                        //console.log('edge added ' + addedNode);
+                                    });
                                 });
-                            });
+                            }
                         }
                     }
                 }

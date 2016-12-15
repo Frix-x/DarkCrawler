@@ -58,7 +58,7 @@ function AddOnion(file, onionArray, callback) {
         onionsAdded = 0;
     if (onionArray != null) {
         for (var i = 0; i < onionArray.length; i++) {
-            if (onionArray[i].endsWith('.onion') && (urlsToVisit.indexOf(onionArray[i]) == -1 && urlsVisited.indexOf(onionArray[i]) == -1)) {
+            if (onionArray[i].endsWith('.onion') && !onionArray[i].startsWith('mailto:') && (urlsToVisit.indexOf(onionArray[i]) == -1 && urlsVisited.indexOf(onionArray[i]) == -1)) {
                 urlsToVisit.push(onionArray[i]);
                 stringToAppend += onionArray[i] + '\n';
                 onionsAdded++;
