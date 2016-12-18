@@ -44,7 +44,15 @@ function ReadOnions(file, callback) {
     });
     var nbOnions;
     rd.on('line', function(line) {
-        nbOnions = urlsToVisit.push(line);
+        if (process.argv[2] == '--resume') {
+            fs.readdir('./ScanResults/', function(err, files) {
+                if (files.indexOf(line + '.json') == -1) {
+                    nbOnions = urlsToVisit.push(line);
+                }
+            })
+        } else {
+            nbOnions = urlsToVisit.push(line);
+        }
     });
     rd.on('close', function() {
         urlsToVisit = ShuffleArray(urlsToVisit);

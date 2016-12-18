@@ -83,6 +83,8 @@ Then change the parameters in the top of those js files to put the right paramet
 ```bash
 # Launch the crawler
 node crawl.js
+# If a scan was previously lauched and some scan results already present, you can resume it with
+node crawl.js --resume
 
 # Launch the hyperlink grapher (can be done in parrallel with crawl.js)
 node hyperlink.js
