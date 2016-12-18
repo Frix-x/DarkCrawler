@@ -8,6 +8,9 @@ const fs = require('fs');
 const request = require('request');
 const chokidar = require('chokidar');
 
+var limitedRequest = request.defaults({
+  pool: {maxSockets: 10}
+})
 
 /**********************************
  ******** GRAPHER FUNCTIONS *******
@@ -21,7 +24,7 @@ function AddGephiNode(node, type, callback) {
         method: 'POST',
         json: JSON.parse(jsonToSend)
     };
-    request(options, function(error, response, body) {
+    limitedRequest(options, function(error, response, body) {
         if (!error) {
             return callback(node);
         } else {
@@ -39,7 +42,7 @@ function AddGephiEdge(node1, node2, callback) {
         method: 'POST',
         json: JSON.parse(jsonToSend)
     };
-    request(options, function(error, response, body) {
+    limitedRequest(options, function(error, response, body) {
         if (!error) {
             return callback();
         } else {
