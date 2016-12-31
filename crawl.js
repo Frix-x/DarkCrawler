@@ -129,12 +129,6 @@ function Crawl() {
             if (data === 'timeout') {
                 console.log('[!!!] Crawler timed out : circuit too slow on this domain...');
                 onionScanner.kill();
-                urlsToVisit = ShuffleArray(urlsToVisit);
-                GetNewTorIdentity(function() {
-                    Crawl();
-                });
-            } else if (JSON.parse(data).TimedOut === true) {
-                console.log('[!!!] Crawler timed out : onion not responding...');
                 urlsVisited.push(urlsToVisit[0]);
                 urlsTimedOut.push(urlsToVisit[0]);
                 urlsToVisit.shift();
@@ -142,6 +136,10 @@ function Crawl() {
                     Crawl();
                 });
             } else {
+                if (JSON.parse(data).timedOut === true) {
+                    console.log('[!!!] Crawler timed out : onion not responding...');
+                    urlsTimedOut.push(urlsToVisit[0]);
+                }
                 fs.writeFile('./ScanResults/' + urlsToVisit[0] + '.json', data, function(err) {
                     if (err) {
                         return console.log(err);

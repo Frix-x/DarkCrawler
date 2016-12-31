@@ -10,6 +10,7 @@
     "dependencies": {
         "tor-control": "^0.0.1",
         "request": "^2.76.0",
-        "chokidar": "^1.6.1"
+        "chokidar": "^1.6.1",
+        "graceful-fs": "^4.1.11"
     }
 }

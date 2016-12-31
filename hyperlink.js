@@ -4,7 +4,7 @@
 
 const GEPHISRV = 'http://127.0.0.1:8080/workspace1';
 
-const fs = require('fs');
+const fs = require('graceful-fs')
 const request = require('request');
 const chokidar = require('chokidar');
 
