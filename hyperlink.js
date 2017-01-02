@@ -9,7 +9,9 @@ const request = require('request');
 const chokidar = require('chokidar');
 
 var limitedRequest = request.defaults({
-  pool: {maxSockets: 10}
+    pool: {
+        maxSockets: 10
+    }
 })
 
 /**********************************
@@ -118,8 +120,10 @@ chokidar.watch('./ScanResults/', {
         }
         if (path.endsWith('.json')) {
             var scandata = JSON.parse(content);
-            MkHtmlGraph(scandata);
-            console.log(scandata.hiddenService + ' added to the graph');
+            if (scandata.hasOwnProperty('identifierReport')) {
+                MkHtmlGraph(scandata);
+                console.log(scandata.hiddenService + ' added to the graph');
+            }
         }
     });
 });
