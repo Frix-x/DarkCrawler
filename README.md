@@ -81,10 +81,10 @@ First of all, put Gephi in English to allow the streaming API to work (while usi
 Then change the parameters in the top of those js files to put the right parameters (torpassword, TOR and Gephi servers IPs)
 
 ```bash
-# Launch the crawler
+# Launch the crawler for simple analysis (semantic)
 node crawl.js
-# If a scan was previously lauched and some scan results already present, you can resume it with
-node crawl.js --resume
+# Or launch the crawler for deeper analysis (semantic + hyperlinks) but take lot more time
+node crawl.js --full
 
 # Launch the hyperlink grapher (can be done in parrallel with crawl.js)
 node hyperlink.js

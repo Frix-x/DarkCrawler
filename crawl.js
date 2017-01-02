@@ -6,8 +6,12 @@ const fs = require('fs');
 const readline = require('readline');
 const spawn = require('child_process').spawn;
 const TorControl = require('tor-control');
+const socksAgent = require('socks5-http-client/lib/Agent');
+const request = require('request');
 
-const TORPROXY = '127.0.0.1:9050';
+const TORIP = '127.0.0.1';
+const TORPORT = '9050';
+const TORPROXY = TORIP + ':' + TORPORT;
 
 var torControl = new TorControl({
     password: 'torpassword',
@@ -37,26 +41,27 @@ function ShuffleArray(array) {
 
 // Read master list of .onion from file
 function ReadOnions(file, callback) {
-    var rd = readline.createInterface({
-        input: fs.createReadStream(file),
-        output: process.stdout,
-        terminal: false
-    });
+    var rd;
     var nbOnions;
-    rd.on('line', function(line) {
-        if (process.argv[2] == '--resume') {
-            fs.readdir('./ScanResults/', function(err, files) {
-                if (files.indexOf(line + '.json') == -1) {
-                    nbOnions = urlsToVisit.push(line);
-                }
-            })
-        } else {
-            nbOnions = urlsToVisit.push(line);
-        }
-    });
-    rd.on('close', function() {
-        urlsToVisit = ShuffleArray(urlsToVisit);
-        return callback(nbOnions);
+    var filelist;
+    fs.readdir('./ScanResults/', function(err, files) {
+        filelist = files;
+        rd = readline.createInterface({
+            input: fs.createReadStream(file),
+            output: process.stdout,
+            terminal: false
+        });
+        rd.on('line', function(line) {
+            if (filelist.indexOf(line + '.json') == -1) {
+                nbOnions = urlsToVisit.push(line);
+            } else {
+                urlsVisited.push(line);
+            }
+        });
+        rd.on('close', function() {
+            urlsToVisit = ShuffleArray(urlsToVisit);
+            return callback(nbOnions);
+        });
     });
 };
 
@@ -84,16 +89,37 @@ function AddOnion(file, onionArray, callback) {
     return callback(0);
 };
 
-// Launch Onionscan in a child process (need to add the casperJS part for semantic analysis)
+// Launch simple and complete (Onionscan) scan for an onion domain depending of process.argv
 function ScanDomain(url, callback) {
     var scan = '';
     console.log('\n[->] Scanning ' + url + '\n[*] ' + (urlsToVisit.length - 1) + ' onion(s) restant');
-    onionScanner = spawn('onionscan', ['--torProxyAddress', TORPROXY, '--jsonReport', '--webport', '0', url]);
-    onionScanner.stdout.on('data', function(data) {
-        scan += data.toString();
-    });
-    onionScanner.on('close', function() {
-        return callback(scan);
+    request.get({
+        url: 'http://' + url,
+        agentClass: socksAgent,
+        agentOptions: {
+            socksHost: TORIP,
+            socksPort: parseInt(TORPORT)
+        }
+    }, function(err, res) {
+        if (err) {
+            return callback('timeout');
+        }
+        if (process.argv.indexOf('--full') > -1) {
+            onionScanner = spawn('onionscan', ['--torProxyAddress', TORPROXY, '--jsonReport', '--webport', '0', url]);
+            onionScanner.stdout.on('data', function(data) {
+                scan += data.toString();
+            });
+            onionScanner.on('close', function() {
+                var jsonscan = JSON.parse(scan);
+                jsonscan.snapshot = res.body;
+                return callback(JSON.stringify(jsonscan));
+            });
+        } else {
+            return callback(JSON.stringify({
+                hiddenService: url,
+                snapshot: res.body
+            }));
+        }
     });
 };
 
@@ -127,8 +153,12 @@ function Crawl() {
     if (urlsToVisit.length > 0) {
         ScanDomain(urlsToVisit[0], TimeoutFunction(function(data) {
             if (data === 'timeout') {
-                console.log('[!!!] Crawler timed out : circuit too slow on this domain...');
-                onionScanner.kill();
+                console.log('[!!!] Crawler timed out or TOR circuit too slow...');
+                try {
+                    onionScanner.kill();
+                } catch (e) {
+                    //console.log(e);
+                }
                 urlsVisited.push(urlsToVisit[0]);
                 urlsTimedOut.push(urlsToVisit[0]);
                 urlsToVisit.shift();
@@ -136,25 +166,29 @@ function Crawl() {
                     Crawl();
                 });
             } else {
-                if (JSON.parse(data).timedOut === true) {
-                    console.log('[!!!] Crawler timed out : onion not responding...');
-                    urlsTimedOut.push(urlsToVisit[0]);
+                if (process.argv.indexOf('--full') > -1) {
+                    if (JSON.parse(data).timedOut === true) {
+                        console.log('[!!!] Crawler timed out on onionscan report...');
+                        urlsTimedOut.push(urlsToVisit[0]);
+                    }
                 }
                 fs.writeFile('./ScanResults/' + urlsToVisit[0] + '.json', data, function(err) {
                     if (err) {
                         return console.log(err);
                     }
                     console.log('[**] Scanfile saved for ' + urlsToVisit[0]);
-                    var onionScanJson = JSON.parse(data);
-                    AddOnion('urls.txt', onionScanJson.identifierReport.linkedOnions, function(nb) {
-                        if (nb != 0) console.log('[*] Added ' + nb + ' .onion linked site(s) to master file');
-                    });
-                    AddOnion('urls.txt', onionScanJson.identifierReport.relatedOnionDomains, function(nb) {
-                        if (nb != 0) console.log('[*] Added ' + nb + ' related .onion domain(s) to master file');
-                    });
-                    AddOnion('urls.txt', onionScanJson.identifierReport.relatedOnionServices, function(nb) {
-                        if (nb != 0) console.log('[*] Added ' + nb + ' related .onion service(s) to master file');
-                    });
+                    if (process.argv.indexOf('--full') > -1) {
+                        var onionScanJson = JSON.parse(data);
+                        AddOnion('urls.txt', onionScanJson.identifierReport.linkedOnions, function(nb) {
+                            if (nb != 0) console.log('[*] Added ' + nb + ' .onion linked site(s) to master file');
+                        });
+                        AddOnion('urls.txt', onionScanJson.identifierReport.relatedOnionDomains, function(nb) {
+                            if (nb != 0) console.log('[*] Added ' + nb + ' related .onion domain(s) to master file');
+                        });
+                        AddOnion('urls.txt', onionScanJson.identifierReport.relatedOnionServices, function(nb) {
+                            if (nb != 0) console.log('[*] Added ' + nb + ' related .onion service(s) to master file');
+                        });
+                    }
                     urlsVisited.push(urlsToVisit[0]);
                     urlsToVisit.shift();
                     GetNewTorIdentity(function() {
