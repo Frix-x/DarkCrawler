@@ -23,8 +23,8 @@ var limitedRequest = request.defaults({
  **********************************/
 
 // Helper to send node info to Gephi
-function AddGephiNode(node, title, type, callback) {
-    var jsonToSend = '{"an":{"' + node + '":{"service_type": "' + type + '","size":10,"Label":"' + title + '"}}}';
+function AddGephiNode(node, type, callback) {
+    var jsonToSend = '{"an":{"' + node + '":{"size":10,"Label":"' + node + '","node_type":"' + type + '"}}}';
     var options = {
         uri: GEPHISRV + '?operation=updateGraph',
         method: 'POST',
@@ -59,7 +59,7 @@ function AddGephiEdge(node1, node2, callback) {
 }
 
 // Main function
-function MkSemanticGraph(scandata) {
+function onionDataAnalysis(scandata, callback) {
     var onionLang = [];
     onionSnpsht = unfluff(scandata.snapshot);
     if (onionSnpsht.text != '') {
@@ -81,10 +81,10 @@ function MkSemanticGraph(scandata) {
             var documents = fulldoc.match(/[^\.!\?]+[\.!\?]+/g);
         }
         if (onionLang[0][0] === 'english') {
-            console.log('LDA :');
-            console.log(lda(documents, 1, 10));
-        }
-    } else console.log('No language detected...');
+            var onionLDA = lda(documents, 1, 10)
+            return callback(scandata.hiddenService, onionLDA);
+        } else return callback(scandata.hiddenService, []);
+    } else return callback(scandata.hiddenService, []);
 }
 
 
@@ -102,8 +102,24 @@ chokidar.watch('./ScanResults/', {
         if (path.endsWith('.json')) {
             var scandata = JSON.parse(content);
             if (scandata.hasOwnProperty('snapshot')) {
-                console.log('Parsing data for : ' + scandata.hiddenService);
-                MkSemanticGraph(scandata);
+                console.log('\n[*] Parsing data for : ' + scandata.hiddenService);
+                onionDataAnalysis(scandata, function(onion, onionLDA) {
+                    if (onionLDA.length > 0) {
+                        AddGephiNode(onion, 'hiddenService', function() {
+                            for (var i in onionLDA) {
+                                var row = onionLDA[i];
+                                for (var j in row) {
+                                    var term = row[j];
+                                    AddGephiNode(term.term, 'keyword', function(addedNode) {
+                                        AddGephiEdge(onion, addedNode, function() {
+                                            //console.log('edge added ' + addedNode);
+                                        });
+                                    });
+                                }
+                            }
+                        });
+                    }
+                });
             }
         }
     });
