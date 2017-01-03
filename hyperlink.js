@@ -12,7 +12,7 @@ var limitedRequest = request.defaults({
     pool: {
         maxSockets: 10
     }
-})
+});
 
 /**********************************
  ******** GRAPHER FUNCTIONS *******

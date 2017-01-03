@@ -12,6 +12,9 @@
         "socks5-http-client": "^1.0.2",
         "request": "^2.76.0",
         "chokidar": "^1.6.1",
-        "graceful-fs": "^4.1.11"
+        "graceful-fs": "^4.1.11",
+        "languagedetect": "^1.1.1",
+        "unfluff": "^1.1.0",
+        "lda": "^0.1.9"
     }
 }
