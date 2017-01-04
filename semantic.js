@@ -41,8 +41,8 @@ function AddGephiNode(node, type, callback) {
 }
 
 // Helper to send edge info to Gephi
-function AddGephiEdge(node1, node2, callback) {
-    var jsonToSend = '{"ae":{"' + node1 + '_' + node2 + '":{"source":"' + node1 + '","target":"' + node2 + '","directed":false}}}';
+function AddGephiEdge(node1, node2, weight, callback) {
+    var jsonToSend = '{"ae":{"' + node1 + '_' + node2 + '":{"source":"' + node1 + '","target":"' + node2 + '","directed":false,"weight":"' + weight + '"}}}';
     var options = {
         uri: GEPHISRV + '?operation=updateGraph',
         method: 'POST',
@@ -59,9 +59,8 @@ function AddGephiEdge(node1, node2, callback) {
 }
 
 // Main function
-function onionDataAnalysis(scandata, callback) {
+function onionDataAnalysis(onion, onionSnpsht, callback) {
     var onionLang = [];
-    onionSnpsht = unfluff(scandata.snapshot);
     if (onionSnpsht.text != '') {
         onionLang = lngDetector.detect(onionSnpsht.text, 1);
     } else if (onionSnpsht.description !== undefined) {
@@ -81,10 +80,13 @@ function onionDataAnalysis(scandata, callback) {
             var documents = fulldoc.match(/[^\.!\?]+[\.!\?]+/g);
         }
         if (onionLang[0][0] === 'english') {
-            var onionLDA = lda(documents, 1, 10)
-            return callback(scandata.hiddenService, onionLDA);
-        } else return callback(scandata.hiddenService, []);
-    } else return callback(scandata.hiddenService, []);
+            var onionLDA = lda(documents, 1, 10, ['en']);
+            return callback(onion, onionLDA);
+        } else return callback(onion, []);
+    } else {
+        console.log('Language : no language detected...');
+        return callback(onion, []);
+    }
 }
 
 
@@ -103,7 +105,8 @@ chokidar.watch('./ScanResults/', {
             var scandata = JSON.parse(content);
             if (scandata.hasOwnProperty('snapshot')) {
                 console.log('\n[*] Parsing data for : ' + scandata.hiddenService);
-                onionDataAnalysis(scandata, function(onion, onionLDA) {
+                var onionSnpsht = unfluff(scandata.snapshot);
+                onionDataAnalysis(scandata.hiddenService, onionSnpsht, function(onion, onionLDA) {
                     if (onionLDA.length > 0) {
                         AddGephiNode(onion, 'hiddenService', function() {
                             for (var i in onionLDA) {
@@ -111,7 +114,7 @@ chokidar.watch('./ScanResults/', {
                                 for (var j in row) {
                                     var term = row[j];
                                     AddGephiNode(term.term, 'keyword', function(addedNode) {
-                                        AddGephiEdge(onion, addedNode, function() {
+                                        AddGephiEdge(onion, addedNode, term.probability, function() {
                                             //console.log('edge added ' + addedNode);
                                         });
                                     });

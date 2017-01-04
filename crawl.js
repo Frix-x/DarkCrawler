@@ -18,6 +18,11 @@ var torControl = new TorControl({
     persistent: false
 });
 
+var timeoutsec = 60000;
+if (process.argv.indexOf('--full') > -1) {
+    timeoutsec = 300000;
+}
+
 var urlsToVisit = [];
 var urlsVisited = [];
 var urlsTimedOut = [];
@@ -196,7 +201,7 @@ function Crawl() {
                     });
                 });
             }
-        }, 300000));
+        }, timeoutsec));
     }
 };
 
